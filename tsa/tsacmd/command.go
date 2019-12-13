@@ -2,6 +2,7 @@ package tsacmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/concourse/concourse/atc"
+	"github.com/concourse/concourse/skymarshal/token"
 	"github.com/concourse/concourse/tsa"
 	"github.com/concourse/flag"
 	"github.com/tedsuo/ifrit"
@@ -17,6 +19,8 @@ import (
 	"github.com/tedsuo/ifrit/http_server"
 	"github.com/tedsuo/ifrit/sigmon"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 type TSACommand struct {
@@ -101,21 +105,27 @@ func (cmd *TSACommand) Runner(args []string) (ifrit.Runner, error) {
 
 	listenAddr := fmt.Sprintf("%s:%d", cmd.BindIP, cmd.BindPort)
 
-	if cmd.SessionSigningKey == nil {
-		return nil, fmt.Errorf("missing session signing key")
+	authConfig := clientcredentials.Config{
+		ClientID:     "concourse-worker",
+		ClientSecret: "Y29uY291cnNlLXdvcmtlcgo=",
+		TokenURL:     "http://localhost:8080/sky/issuer/token",
+		Scopes:       []string{"email", "profile", "federated:id"},
 	}
 
-	tokenGenerator := tsa.NewTokenGenerator(cmd.SessionSigningKey.PrivateKey)
+	ctx := context.Background()
+
+	tokenSource := authConfig.TokenSource(ctx)
+	idTokenSource := token.NewTokenSource(tokenSource)
+	httpClient := oauth2.NewClient(ctx, idTokenSource)
 
 	server := &server{
 		logger:            logger,
 		heartbeatInterval: cmd.HeartbeatInterval,
 		cprInterval:       1 * time.Second,
 		atcEndpointPicker: atcEndpointPicker,
-		tokenGenerator:    tokenGenerator,
 		forwardHost:       cmd.PeerAddress,
 		config:            config,
-		httpClient:        http.DefaultClient,
+		httpClient:        httpClient,
 		sessionTeam:       sessionAuthTeam,
 	}
 

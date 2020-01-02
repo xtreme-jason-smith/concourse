@@ -168,19 +168,19 @@ func (s *SkyServer) Callback(w http.ResponseWriter, r *http.Request) {
 	cookieState, err := r.Cookie(stateCookieName)
 	if err != nil {
 		logger.Error("failed-to-fetch-cookie-state", err)
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if errMsg, errDesc := r.FormValue("error"), r.FormValue("error_description"); errMsg != "" {
 		logger.Error("failed-with-callback-error", errors.New(errMsg+" : "+errDesc))
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
 
 	if stateToken = cookieState.Value; stateToken != r.FormValue("state") {
-		logger.Error("failed-with-unexpected-state-token", err)
-		w.WriteHeader(http.StatusBadRequest)
+		logger.Error("failed-with-unexpected-state-token", nil)
+		http.Error(w, "unexpected state token", http.StatusBadRequest)
 		return
 	}
 
@@ -193,8 +193,8 @@ func (s *SkyServer) Callback(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if authCode = r.FormValue("code"); authCode == "" {
-		logger.Error("failed-to-get-auth-code", err)
-		w.WriteHeader(http.StatusBadRequest)
+		logger.Error("failed-to-get-auth-code", nil)
+		http.Error(w, "unexpected auth code", http.StatusBadRequest)
 		return
 	}
 
@@ -207,20 +207,20 @@ func (s *SkyServer) Callback(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, string(e.Body), e.Response.StatusCode)
 			return
 		default:
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
 
 	if verifiedClaims, err = s.config.TokenVerifier.Verify(ctx, dexToken); err != nil {
 		logger.Error("failed-to-verify-dex-token", err)
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if skyToken, err = s.config.TokenIssuer.Issue(verifiedClaims); err != nil {
 		logger.Error("failed-to-issue-concourse-token", err)
-		w.WriteHeader(http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 

@@ -26,11 +26,13 @@ type alias Fetched a =
 type Route
     = RouteJob Concourse.JobIdentifier
     | RouteJobs Concourse.PipelineIdentifier
+    | RouteJobBuilds Concourse.JobIdentifier (Maybe Page)
 
 
 type ApiEntity
     = Job Concourse.Job
     | Jobs Json.Encode.Value
+    | Builds (Paginated Concourse.Build)
 
 
 type Callback
@@ -39,7 +41,6 @@ type Callback
     | GotCurrentTime Time.Posix
     | GotCurrentTimeZone Time.Zone
     | BuildTriggered (Fetched Concourse.Build)
-    | JobBuildsFetched (Fetched (Paginated Concourse.Build))
     | PipelineFetched (Fetched Concourse.Pipeline)
     | PipelinesFetched (Fetched (List Concourse.Pipeline))
     | PipelineToggled Concourse.PipelineIdentifier (Fetched ())

@@ -1069,10 +1069,9 @@ iSeeItIsALinkToTheFirstPipeline =
 
 iToggledToHighDensity =
     Tuple.first
-        >> Application.update
-            (TopLevelMessage.DeliveryReceived <|
-                Subscription.RouteChanged <|
-                    Routes.Dashboard Routes.HighDensity
+        >> Application.handleDelivery
+            (Subscription.RouteChanged <|
+                Routes.Dashboard Routes.HighDensity
             )
 
 

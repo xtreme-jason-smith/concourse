@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -223,6 +224,7 @@ var _ = Describe("Sky Server API", func() {
 				response    *http.Response
 				stateCookie *http.Cookie
 				reqPath     string
+				body        []byte
 			)
 			BeforeEach(func() {
 				reqPath = "/sky/callback?state=some-state&code=some-code"
@@ -240,6 +242,9 @@ var _ = Describe("Sky Server API", func() {
 
 				response, err = client.Do(request)
 				Expect(err).NotTo(HaveOccurred())
+
+				body, err = ioutil.ReadAll(response.Body)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("the state cookie doesn't exist", func() {
@@ -250,6 +255,10 @@ var _ = Describe("Sky Server API", func() {
 				It("errors", func() {
 					Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
 				})
+
+				It("shows state cookie not found message", func() {
+					Expect(string(body)).To(Equal("http: named cookie not present\n"))
+				})
 			})
 
 			Context("dex returns an error param", func() {
@@ -259,6 +268,10 @@ var _ = Describe("Sky Server API", func() {
 
 				It("errors", func() {
 					Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
+				})
+
+				It("shows dex error", func() {
+					Expect(string(body)).To(Equal("some-error\n"))
 				})
 			})
 
@@ -271,6 +284,10 @@ var _ = Describe("Sky Server API", func() {
 				It("errors", func() {
 					Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
 				})
+
+				It("shows state token matching error", func() {
+					Expect(string(body)).To(Equal("unexpected state token\n"))
+				})
 			})
 
 			Context("dex doesn't return an authorization code", func() {
@@ -281,20 +298,50 @@ var _ = Describe("Sky Server API", func() {
 				It("errors", func() {
 					Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
 				})
+
+				It("shows auth code error", func() {
+					Expect(string(body)).To(Equal("unexpected auth code\n"))
+				})
 			})
 
-			Context("requesting a token from dex fails", func() {
+			Context("requesting a token from dex fails with non 2XX error from dex", func() {
 				BeforeEach(func() {
 					dexServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", "/sky/issuer/token"),
-							ghttp.RespondWith(http.StatusInternalServerError, nil),
+							ghttp.RespondWith(http.StatusInternalServerError, "fail-to-exchange-dex-token"),
 						),
 					)
 				})
 
 				It("errors", func() {
 					Expect(response.StatusCode).To(Equal(http.StatusInternalServerError))
+				})
+
+				It("shows exchanging token failure error", func() {
+					Expect(string(body)).To(Equal("fail-to-exchange-dex-token\n"))
+				})
+			})
+
+			Context("requesting a token from dex fails with oauth error (dex 200 with no access_token returned)", func() {
+				BeforeEach(func() {
+					dexServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyRequest("POST", "/sky/issuer/token"),
+							ghttp.RespondWithJSONEncoded(http.StatusOK, map[string]string{
+								"token_type": "some-type",
+								"id_token":   "some-id-token",
+							}),
+						),
+					)
+				})
+
+				It("errors", func() {
+					Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
+				})
+
+				It("shows oauth error", func() {
+					Expect(string(body)).To(Equal("oauth2: server response missing access_token\n"))
 				})
 			})
 
@@ -320,7 +367,7 @@ var _ = Describe("Sky Server API", func() {
 
 				Context("the token verification fails", func() {
 					BeforeEach(func() {
-						fakeTokenVerifier.VerifyReturns(nil, errors.New("error"))
+						fakeTokenVerifier.VerifyReturns(nil, errors.New("verification-error"))
 					})
 
 					It("passes the correct args to the token verifier", func() {
@@ -333,13 +380,17 @@ var _ = Describe("Sky Server API", func() {
 					It("errors", func() {
 						Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
 					})
+
+					It("shows token verification error", func() {
+						Expect(string(body)).To(Equal("verification-error\n"))
+					})
 				})
 
 				Context("issuing the concourse token fails", func() {
 					BeforeEach(func() {
 						fakeVerifiedClaims = &token.VerifiedClaims{}
 						fakeTokenVerifier.VerifyReturns(fakeVerifiedClaims, nil)
-						fakeTokenIssuer.IssueReturns(nil, errors.New("error"))
+						fakeTokenIssuer.IssueReturns(nil, errors.New("concourse-token-issue-error"))
 					})
 
 					It("passes the correct args to the token issuer", func() {
@@ -349,6 +400,10 @@ var _ = Describe("Sky Server API", func() {
 
 					It("errors", func() {
 						Expect(response.StatusCode).To(Equal(http.StatusUnauthorized))
+					})
+
+					It("shows concourse token issuing error", func() {
+						Expect(string(body)).To(Equal("concourse-token-issue-error\n"))
 					})
 
 					It("doesn't record the user login", func() {

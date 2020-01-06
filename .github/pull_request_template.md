@@ -2,7 +2,7 @@
 
 > If you haven't already, please take a look at our [Code of Conduct] and our
 > [Contributing Guide]. There are certain anti-patterns that we try to avoid -
-> check the [Anti-patterns page] to now more.
+> check the [Anti-patterns page] to know more.
 
 > To help us review your PR, please fill in the following information.
 

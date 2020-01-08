@@ -67,7 +67,7 @@ func infoHandler() http.HandlerFunc {
 
 func tokenHandler() http.HandlerFunc {
 	return ghttp.CombineHandlers(
-		ghttp.VerifyRequest("POST", "/sky/token"),
+		ghttp.VerifyRequest("POST", "/sky/issuer/token"),
 		ghttp.RespondWithJSONEncoded(
 			200,
 			token(),
@@ -115,7 +115,8 @@ func teamHandler(teams []atc.Team, encodedString string) http.HandlerFunc {
 func token() map[string]string {
 	return map[string]string{
 		"token_type":   "Bearer",
-		"access_token": "some-token",
+		"access_token": "some-access-token",
+		"id_token":     "some-token",
 	}
 }
 

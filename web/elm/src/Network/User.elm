@@ -8,7 +8,7 @@ import Task exposing (Task)
 
 fetchUser : Task Http.Error Concourse.User
 fetchUser =
-    HttpBuilder.get "/sky/userinfo"
+    HttpBuilder.get "/api/v1/user"
         |> HttpBuilder.withExpect (Http.expectJson Concourse.decodeUser)
         |> HttpBuilder.toTask
 

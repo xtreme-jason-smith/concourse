@@ -1,9 +1,10 @@
 package accessor
 
 import (
-	"code.cloudfoundry.org/lager"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"code.cloudfoundry.org/lager"
+	"sigs.k8s.io/yaml"
 
 	"github.com/concourse/concourse/atc"
 )

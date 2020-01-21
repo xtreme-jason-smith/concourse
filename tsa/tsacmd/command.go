@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"io/ioutil"
-	yaml "gopkg.in/yaml.v2"
+
+	"sigs.k8s.io/yaml"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/concourse/concourse/atc"
@@ -53,8 +54,8 @@ type TeamAuthKeys struct {
 }
 
 type yamlTeamAuthorizedKey struct {
-	Team string   `yaml:"team"`
-	Keys []string `yaml:"ssh_keys,flow"`
+	Team string   `json:"team"`
+	Keys []string `json:"ssh_keys"`
 }
 
 func (cmd *TSACommand) Execute(args []string) error {

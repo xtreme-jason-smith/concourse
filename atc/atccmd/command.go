@@ -89,6 +89,9 @@ var schedulerCache = gocache.New(10*time.Second, 10*time.Second)
 var defaultDriverName = "postgres"
 var retryingDriverName = "too-many-connections-retrying"
 
+var flyClientID = "fly"
+var flyClientSecret = "Zmx5"
+
 const runnerInterval = 10 * time.Second
 
 type ATCCommand struct {
@@ -1610,7 +1613,7 @@ func (cmd *RunCommand) constructAuthHandler(
 	}
 
 	// Add public fly client
-	cmd.Auth.AuthFlags.Clients["fly"] = "Zmx5"
+	cmd.Auth.AuthFlags.Clients[flyClientID] = flyClientSecret
 
 	dexServer, err := dexserver.NewDexServer(&dexserver.DexConfig{
 		Logger:      logger.Session("dex"),
@@ -1676,7 +1679,7 @@ func (cmd *RunCommand) constructTokenVerifier(httpClient *http.Client) accessor.
 	publicKeyPath, _ := url.Parse("/sky/issuer/keys")
 	publicKeyURL := cmd.ExternalURL.URL.ResolveReference(publicKeyPath)
 
-	validClients := []string{"fly"}
+	validClients := []string{flyClientID}
 	for clientId, _ := range cmd.Auth.AuthFlags.Clients {
 		validClients = append(validClients, clientId)
 	}

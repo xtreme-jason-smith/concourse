@@ -4,6 +4,7 @@ module Data exposing
     , jobBuild
     , jobId
     , pipelineName
+    , rerunShortcut
     , resource
     , resourceName
     , teamName
@@ -151,4 +152,13 @@ triggerShortcut =
     , shiftKey = True
     , metaKey = False
     , code = Keyboard.T
+    }
+
+
+rerunShortcut : Keyboard.KeyEvent
+rerunShortcut =
+    { ctrlKey = False
+    , shiftKey = True
+    , metaKey = False
+    , code = Keyboard.R
     }

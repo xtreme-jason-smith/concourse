@@ -1,5 +1,6 @@
 module Data exposing
     ( check
+    , job
     , jobBuild
     , jobId
     , pipelineName
@@ -94,6 +95,26 @@ jobId =
     { teamName = "t"
     , pipelineName = "p"
     , jobName = "j"
+    }
+
+
+job : Concourse.Job
+job =
+    { name = "j"
+    , pipelineName = "p"
+    , teamName = "t"
+    , pipeline =
+        { pipelineName = "p"
+        , teamName = "t"
+        }
+    , nextBuild = Nothing
+    , finishedBuild = Nothing
+    , transitionBuild = Nothing
+    , paused = False
+    , disableManualTrigger = False
+    , inputs = []
+    , outputs = []
+    , groups = []
     }
 
 

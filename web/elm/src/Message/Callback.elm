@@ -39,6 +39,7 @@ type ApiEntity
     = Job Concourse.Job
     | Jobs Json.Encode.Value
     | Builds (Paginated Concourse.Build)
+    | Build Concourse.Build
 
 
 type Callback
@@ -46,7 +47,6 @@ type Callback
     | ApiResponse Route HttpMethod (Fetched ApiEntity)
     | GotCurrentTime Time.Posix
     | GotCurrentTimeZone Time.Zone
-    | BuildTriggered (Fetched Concourse.Build)
     | PipelineFetched (Fetched Concourse.Pipeline)
     | PipelinesFetched (Fetched (List Concourse.Pipeline))
     | PipelineToggled Concourse.PipelineIdentifier (Fetched ())

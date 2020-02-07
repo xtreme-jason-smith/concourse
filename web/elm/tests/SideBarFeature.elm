@@ -1717,6 +1717,7 @@ iOpenTheNotFoundPage =
                     , jobName = "job"
                     }
                 )
+                Callback.GET
                 (Err <|
                     Http.BadStatus
                         { url = "http://example.com"

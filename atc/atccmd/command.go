@@ -1736,7 +1736,7 @@ func (cmd *RunCommand) constructAPIHandler(
 			checkWorkerTeamAccessHandlerFactory,
 		),
 		wrappa.NewConcourseVersionWrappa(concourse.Version),
-		wrappa.NewAccessorWrappa(logger, accessFactory, aud),
+		wrappa.NewAccessorWrappa(logger, accessFactory, aud, dbUserFactory),
 		wrappa.NewCompressionWrappa(logger),
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/concourse/concourse/atc/api/accessor"
 	"github.com/concourse/concourse/atc/api/accessor/accessorfakes"
 	"github.com/concourse/concourse/atc/auditor/auditorfakes"
+	"github.com/concourse/concourse/atc/db/dbfakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -22,6 +23,7 @@ var _ = Describe("Handler", func() {
 		fakeAccessorFactory *accessorfakes.FakeAccessFactory
 		fakeHandler         *accessorfakes.FakeHandler
 		fakeAuditor         *auditorfakes.FakeAuditor
+		fakeUserFactory     *dbfakes.FakeUserFactory
 		fakeAccess          *accessorfakes.FakeAccess
 		accessorHandler     http.Handler
 
@@ -35,10 +37,13 @@ var _ = Describe("Handler", func() {
 		fakeAccessorFactory = new(accessorfakes.FakeAccessFactory)
 		fakeHandler = new(accessorfakes.FakeHandler)
 		fakeAuditor = new(auditorfakes.FakeAuditor)
+		fakeUserFactory = new(dbfakes.FakeUserFactory)
 
 		fakeAccess = new(accessorfakes.FakeAccess)
 		fakeAccess.ClaimsReturns(accessor.Claims{
-			UserName: "some-user",
+			UserName:  "some-user",
+			Connector: "some-connector",
+			Sub:       "some-sub",
 		})
 
 		var err error
@@ -54,7 +59,14 @@ var _ = Describe("Handler", func() {
 
 	Describe("Accessor Handler", func() {
 		BeforeEach(func() {
-			accessorHandler = accessor.NewHandler(logger, fakeHandler, fakeAccessorFactory, "some-action", fakeAuditor)
+			accessorHandler = accessor.NewHandler(
+				logger,
+				fakeHandler,
+				fakeAccessorFactory,
+				"some-action",
+				fakeAuditor,
+				fakeUserFactory,
+			)
 		})
 
 		Context("when access factory returns an error", func() {
@@ -63,7 +75,8 @@ var _ = Describe("Handler", func() {
 			})
 
 			It("returns a server error", func() {
-				Expect(w.Result().StatusCode).To(Equal(http.StatusInternalServerError))
+				Expect(w.Result().StatusCode).
+					To(Equal(http.StatusInternalServerError))
 			})
 		})
 
@@ -84,6 +97,28 @@ var _ = Describe("Handler", func() {
 				Expect(action).To(Equal("some-action"))
 				Expect(userName).To(Equal("some-user"))
 				Expect(r).To(Equal(req))
+			})
+
+			It("updates the requesting user's activity", func() {
+				Expect(fakeUserFactory.CreateOrUpdateUserCallCount()).
+					To(Equal(1))
+				username, connector, sub := fakeUserFactory.
+					CreateOrUpdateUserArgsForCall(0)
+				Expect(username).To(Equal("some-user"))
+				Expect(connector).To(Equal("some-connector"))
+				Expect(sub).To(Equal("some-sub"))
+			})
+
+		})
+		Context("when the user factory fails", func() {
+			BeforeEach(func() {
+				fakeAccessorFactory.CreateReturns(fakeAccess, nil)
+				fakeUserFactory.
+					CreateOrUpdateUserReturns(nil, errors.New("nope"))
+			})
+			It("returns a server error", func() {
+				Expect(w.Result().StatusCode).
+					To(Equal(http.StatusInternalServerError))
 			})
 		})
 	})

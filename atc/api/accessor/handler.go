@@ -8,6 +8,8 @@ import (
 	"github.com/concourse/concourse/atc/auditor"
 )
 
+//go:generate counterfeiter net/http.Handler
+
 func NewHandler(
 	logger lager.Logger,
 	handler http.Handler,
@@ -43,7 +45,7 @@ func (h accessorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.WithValue(r.Context(), "accessor", acc)
 
-	h.auditor.Audit(h.action, acc.UserName(), r)
+	h.auditor.Audit(h.action, acc.Claims().UserName, r)
 	h.handler.ServeHTTP(w, r.WithContext(ctx))
 }
 

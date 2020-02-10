@@ -15,15 +15,15 @@ import (
 )
 
 var _ = Describe("Handler", func() {
-	// dummy handler
+
 	var (
-		logger             lager.Logger
-		innerHandlerCalled bool
-		accessorFactory    *accessorfakes.FakeAccessFactory
-		dummyHandler       http.HandlerFunc
-		access             accessor.Access
-		fakeAccess         *accessorfakes.FakeAccess
-		accessorHandler    http.Handler
+		logger lager.Logger
+
+		fakeAccessorFactory *accessorfakes.FakeAccessFactory
+		fakeHandler         *accessorfakes.FakeHandler
+		fakeAuditor         *auditorfakes.FakeAuditor
+		fakeAccess          *accessorfakes.FakeAccess
+		accessorHandler     http.Handler
 
 		req *http.Request
 		w   *httptest.ResponseRecorder
@@ -31,19 +31,21 @@ var _ = Describe("Handler", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("test")
-		accessorFactory = new(accessorfakes.FakeAccessFactory)
 
-		dummyHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			innerHandlerCalled = true
+		fakeAccessorFactory = new(accessorfakes.FakeAccessFactory)
+		fakeHandler = new(accessorfakes.FakeHandler)
+		fakeAuditor = new(auditorfakes.FakeAuditor)
 
-			access = r.Context().Value("accessor").(accessor.Access)
+		fakeAccess = new(accessorfakes.FakeAccess)
+		fakeAccess.ClaimsReturns(accessor.Claims{
+			UserName: "some-user",
 		})
-
-		w = httptest.NewRecorder()
 
 		var err error
 		req, err = http.NewRequest("GET", "localhost:8080", nil)
 		Expect(err).NotTo(HaveOccurred())
+
+		w = httptest.NewRecorder()
 	})
 
 	JustBeforeEach(func() {
@@ -52,12 +54,12 @@ var _ = Describe("Handler", func() {
 
 	Describe("Accessor Handler", func() {
 		BeforeEach(func() {
-			accessorHandler = accessor.NewHandler(logger, dummyHandler, accessorFactory, "some-action", new(auditorfakes.FakeAuditor))
+			accessorHandler = accessor.NewHandler(logger, fakeHandler, fakeAccessorFactory, "some-action", fakeAuditor)
 		})
 
 		Context("when access factory returns an error", func() {
 			BeforeEach(func() {
-				accessorFactory.CreateReturns(nil, errors.New("nope"))
+				fakeAccessorFactory.CreateReturns(nil, errors.New("nope"))
 			})
 
 			It("returns a server error", func() {
@@ -67,12 +69,21 @@ var _ = Describe("Handler", func() {
 
 		Context("when access factory return valid access object", func() {
 			BeforeEach(func() {
-				fakeAccess = new(accessorfakes.FakeAccess)
-				accessorFactory.CreateReturns(fakeAccess, nil)
+				fakeAccessorFactory.CreateReturns(fakeAccess, nil)
 			})
-			It("calls the inner handler", func() {
-				Expect(innerHandlerCalled).To(BeTrue())
-				Expect(access).To(Equal(fakeAccess))
+
+			It("invokes the handler", func() {
+				Expect(fakeHandler.ServeHTTPCallCount()).To(Equal(1))
+				_, r := fakeHandler.ServeHTTPArgsForCall(0)
+				Expect(accessor.GetAccessor(r)).To(Equal(fakeAccess))
+			})
+
+			It("audits the event", func() {
+				Expect(fakeAuditor.AuditCallCount()).To(Equal(1))
+				action, userName, r := fakeAuditor.AuditArgsForCall(0)
+				Expect(action).To(Equal("some-action"))
+				Expect(userName).To(Equal("some-user"))
+				Expect(r).To(Equal(req))
 			})
 		})
 	})

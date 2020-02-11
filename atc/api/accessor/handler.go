@@ -47,20 +47,24 @@ func (h accessorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims := acc.Claims()
+
+	if claims.Sub != "" {
+		_, err = h.userFactory.CreateOrUpdateUser(
+			claims.UserName,
+			claims.Connector,
+			claims.Sub,
+		)
+		if err != nil {
+			h.logger.Error("failed-to-update-user-activity", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
 	ctx := context.WithValue(r.Context(), "accessor", acc)
 
-	claims := acc.Claims()
 	h.auditor.Audit(h.action, claims.UserName, r)
-	_, err = h.userFactory.CreateOrUpdateUser(
-		claims.UserName,
-		claims.Connector,
-		claims.Sub,
-	)
-	if err != nil {
-		h.logger.Error("failed-to-update-user-activity", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	h.handler.ServeHTTP(w, r.WithContext(ctx))
 }
 

@@ -8,22 +8,24 @@ import (
 )
 
 type FakeActionRoleMap struct {
-	RoleOfActionStub        func(string) string
+	RoleOfActionStub        func(string) (bool, string)
 	roleOfActionMutex       sync.RWMutex
 	roleOfActionArgsForCall []struct {
 		arg1 string
 	}
 	roleOfActionReturns struct {
-		result1 string
+		result1 bool
+		result2 string
 	}
 	roleOfActionReturnsOnCall map[int]struct {
-		result1 string
+		result1 bool
+		result2 string
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeActionRoleMap) RoleOfAction(arg1 string) string {
+func (fake *FakeActionRoleMap) RoleOfAction(arg1 string) (bool, string) {
 	fake.roleOfActionMutex.Lock()
 	ret, specificReturn := fake.roleOfActionReturnsOnCall[len(fake.roleOfActionArgsForCall)]
 	fake.roleOfActionArgsForCall = append(fake.roleOfActionArgsForCall, struct {
@@ -35,10 +37,10 @@ func (fake *FakeActionRoleMap) RoleOfAction(arg1 string) string {
 		return fake.RoleOfActionStub(arg1)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
 	fakeReturns := fake.roleOfActionReturns
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeActionRoleMap) RoleOfActionCallCount() int {
@@ -47,7 +49,7 @@ func (fake *FakeActionRoleMap) RoleOfActionCallCount() int {
 	return len(fake.roleOfActionArgsForCall)
 }
 
-func (fake *FakeActionRoleMap) RoleOfActionCalls(stub func(string) string) {
+func (fake *FakeActionRoleMap) RoleOfActionCalls(stub func(string) (bool, string)) {
 	fake.roleOfActionMutex.Lock()
 	defer fake.roleOfActionMutex.Unlock()
 	fake.RoleOfActionStub = stub
@@ -60,27 +62,30 @@ func (fake *FakeActionRoleMap) RoleOfActionArgsForCall(i int) string {
 	return argsForCall.arg1
 }
 
-func (fake *FakeActionRoleMap) RoleOfActionReturns(result1 string) {
+func (fake *FakeActionRoleMap) RoleOfActionReturns(result1 bool, result2 string) {
 	fake.roleOfActionMutex.Lock()
 	defer fake.roleOfActionMutex.Unlock()
 	fake.RoleOfActionStub = nil
 	fake.roleOfActionReturns = struct {
-		result1 string
-	}{result1}
+		result1 bool
+		result2 string
+	}{result1, result2}
 }
 
-func (fake *FakeActionRoleMap) RoleOfActionReturnsOnCall(i int, result1 string) {
+func (fake *FakeActionRoleMap) RoleOfActionReturnsOnCall(i int, result1 bool, result2 string) {
 	fake.roleOfActionMutex.Lock()
 	defer fake.roleOfActionMutex.Unlock()
 	fake.RoleOfActionStub = nil
 	if fake.roleOfActionReturnsOnCall == nil {
 		fake.roleOfActionReturnsOnCall = make(map[int]struct {
-			result1 string
+			result1 bool
+			result2 string
 		})
 	}
 	fake.roleOfActionReturnsOnCall[i] = struct {
-		result1 string
-	}{result1}
+		result1 bool
+		result2 string
+	}{result1, result2}
 }
 
 func (fake *FakeActionRoleMap) Invocations() map[string][][]interface{} {

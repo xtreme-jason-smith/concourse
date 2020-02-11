@@ -8,6 +8,14 @@ import (
 	"github.com/concourse/concourse/atc/db"
 )
 
+type RoleDoesNotExistForActionError struct {
+	action string
+}
+
+func (e RoleDoesNotExistForActionError) Error() string {
+	return fmt.Sprintf("role does not exist for action %s", e.action)
+}
+
 //go:generate counterfeiter . Verifier
 
 type Verifier interface {
@@ -55,8 +63,10 @@ type accessFactory struct {
 }
 
 func (a *accessFactory) Create(r *http.Request, action string) (Access, error) {
-
-	requiredRole := a.RoleOfAction(action)
+	found, requiredRole := a.RoleOfAction(action)
+	if !found {
+		return nil, RoleDoesNotExistForActionError{action}
+	}
 
 	verification := a.verify(r)
 
@@ -115,6 +125,11 @@ func (a *accessFactory) CustomizeActionRoleMap(logger lager.Logger, customMappin
 	return nil
 }
 
-func (a *accessFactory) RoleOfAction(action string) string {
-	return a.rolesActionMap[action]
+func (a *accessFactory) RoleOfAction(action string) (bool, string) {
+	role, found := a.rolesActionMap[action]
+	if !found {
+		return false, ""
+	}
+
+	return true, role
 }

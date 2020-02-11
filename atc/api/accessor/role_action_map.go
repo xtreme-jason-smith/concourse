@@ -74,6 +74,7 @@ var requiredRoles = map[string]string{
 	atc.ListWorkers:                   "viewer",
 	atc.DeleteWorker:                  "member",
 	atc.SetLogLevel:                   "member",
+	atc.ListActiveUsersSince:          "member",
 	atc.GetLogLevel:                   "viewer",
 	atc.DownloadCLI:                   "viewer",
 	atc.GetInfo:                       "viewer",
@@ -95,6 +96,9 @@ var requiredRoles = map[string]string{
 	atc.CreateArtifact:                "member",
 	atc.GetArtifact:                   "member",
 	atc.ListBuildArtifacts:            "viewer",
+	atc.GetWall:                       "viewer",
+	atc.SetWall:                       "member",
+	atc.ClearWall:                     "member",
 }
 
 type CustomActionRoleMap map[string][]string
@@ -102,7 +106,7 @@ type CustomActionRoleMap map[string][]string
 //go:generate counterfeiter . ActionRoleMap
 
 type ActionRoleMap interface {
-	RoleOfAction(string) string
+	RoleOfAction(string) (bool, string)
 }
 
 //go:generate counterfeiter . ActionRoleMapModifier

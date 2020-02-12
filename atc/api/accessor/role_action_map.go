@@ -1,9 +1,10 @@
 package accessor
 
 import (
+	"io/ioutil"
+
 	"code.cloudfoundry.org/lager"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 
 	"github.com/concourse/concourse/atc"
 )
@@ -24,6 +25,7 @@ var requiredRoles = map[string]string{
 	atc.GetBuildPreparation:           "viewer",
 	atc.GetJob:                        "viewer",
 	atc.CreateJobBuild:                "pipeline-operator",
+	atc.RerunJobBuild:                 "pipeline-operator",
 	atc.ListAllJobs:                   "viewer",
 	atc.ListJobs:                      "viewer",
 	atc.ListJobBuilds:                 "viewer",
@@ -73,12 +75,8 @@ var requiredRoles = map[string]string{
 	atc.HeartbeatWorker:               "member",
 	atc.ListWorkers:                   "viewer",
 	atc.DeleteWorker:                  "member",
-	atc.SetLogLevel:                   "member",
-	atc.ListActiveUsersSince:          "member",
-	atc.GetLogLevel:                   "viewer",
 	atc.DownloadCLI:                   "viewer",
 	atc.GetInfo:                       "viewer",
-	atc.GetInfoCreds:                  "viewer",
 	atc.ListContainers:                "viewer",
 	atc.GetContainer:                  "viewer",
 	atc.HijackContainer:               "member",
@@ -97,8 +95,16 @@ var requiredRoles = map[string]string{
 	atc.GetArtifact:                   "member",
 	atc.ListBuildArtifacts:            "viewer",
 	atc.GetWall:                       "viewer",
-	atc.SetWall:                       "member",
-	atc.ClearWall:                     "member",
+	atc.GetUser:                       "member",
+}
+
+var AdminOnly = []string{
+	atc.GetLogLevel,
+	atc.SetLogLevel,
+	atc.ListActiveUsersSince,
+	atc.GetInfoCreds,
+	atc.SetWall,
+	atc.ClearWall,
 }
 
 type CustomActionRoleMap map[string][]string

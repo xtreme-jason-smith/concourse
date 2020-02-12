@@ -195,7 +195,6 @@ var _ = Describe("Accessor", func() {
 			Expect(expected).Should(Equal(result))
 		},
 
-
 		Entry("viewer attempting viewer action", "viewer", "viewer", true),
 		Entry("pipeline-operator attempting viewer action", "viewer", "pipeline-operator", true),
 		Entry("member attempting viewer action", "viewer", "member", true),
@@ -241,7 +240,6 @@ var _ = Describe("Accessor", func() {
 			result := access.IsAuthorized("some-team")
 			Expect(expected).Should(Equal(result))
 		},
-
 
 		Entry("viewer attempting viewer action", "viewer", "viewer", true),
 		Entry("pipeline-operator attempting viewer action", "viewer", "pipeline-operator", true),

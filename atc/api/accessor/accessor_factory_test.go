@@ -174,10 +174,12 @@ var _ = Describe("AccessorFactory", func() {
 			accessorFactory = accessor.NewAccessFactory(fakeVerifier, fakeTeamFactory, "sub", []string{"some-sub"})
 		})
 
-		It("contains a role for every api endpoint", func() {
+		It("addresses every route with either team role or admin only", func() {
 			for _, route := range atc.Routes {
 				found, _ := accessorFactory.RoleOfAction(route.Name)
-				Expect(found).To(BeTrue(), fmt.Sprintf("endpoint %s has no role", route.Name))
+				if !found {
+					Expect(accessor.AdminOnly).To(ContainElement(route.Name), fmt.Sprintf("endpoint %s has no team or admin role", route.Name))
+				}
 			}
 		})
 	})

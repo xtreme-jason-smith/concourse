@@ -28,10 +28,6 @@ pipeline on a team at the same time. #4092
 
 * In the case that a user has multiple roles on a team, the pills on the team headers on the dashboard now accurately reflect the logged-in user's most-privileged role on each team. #5133
 
-[OpenTelemetry]: https://opentelemetry.io/
-[Jaeger]: https://www.jaegertracing.io/
-[Stackdriver]: https://cloud.google.com/trace/
-
 #### <sub><sup><a name="5160" href="#5160">:link:</a></sup></sub> fix
 
 * Fix misuse of mount options when performing copy-on-write volumes based on
@@ -48,3 +44,11 @@ errors from the library we used before.
 #### <sub><sup><a name="4847" href="#4847">:link:</a></sup></sub> fix
 
 * Set a default value of `4h` for `rebalance-interval`. Previously, this value was unset. With the new default, the workers will reconnect to a randomly selected TSA (SSH Gateway) every 4h.
+
+#### <sub><sup><a name="5148" href="#5148">:link:</a></sup></sub> feature
+
+* Improve the initial page load time by lazy-loading Javascript that isn't necessary for the first render. #5148
+
+[OpenTelemetry]: https://opentelemetry.io/
+[Jaeger]: https://www.jaegertracing.io/
+[Stackdriver]: https://cloud.google.com/trace/

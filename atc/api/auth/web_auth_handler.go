@@ -7,6 +7,18 @@ import (
 	"github.com/concourse/concourse/skymarshal/token"
 )
 
+//go:generate counterfeiter net/http.Handler
+
+type responseRecorder struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (r *responseRecorder) WriteHeader(statusCode int) {
+	r.statusCode = statusCode
+	r.ResponseWriter.WriteHeader(statusCode)
+}
+
 type WebAuthHandler struct {
 	Handler    http.Handler
 	Middleware token.Middleware
@@ -23,7 +35,12 @@ func (handler WebAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	handler.Handler.ServeHTTP(w, r)
+	recorder := &responseRecorder{ResponseWriter: w}
+	handler.Handler.ServeHTTP(recorder, r)
+
+	if tokenString != "" && recorder.statusCode == http.StatusUnauthorized {
+		handler.Middleware.UnsetAuthToken(w)
+	}
 }
 
 // We don't validate CSRF token for GET requests

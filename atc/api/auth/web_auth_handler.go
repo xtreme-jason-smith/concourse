@@ -9,13 +9,23 @@ import (
 
 //go:generate counterfeiter net/http.Handler
 
-type responseRecorder struct {
-	http.ResponseWriter
-	statusCode int
+func NewResponseWrapper(w http.ResponseWriter, m token.Middleware) *responseWrapper {
+	return &responseWrapper{w, m}
 }
 
-func (r *responseRecorder) WriteHeader(statusCode int) {
-	r.statusCode = statusCode
+type responseWrapper struct {
+	http.ResponseWriter
+	token.Middleware
+}
+
+func (r *responseWrapper) WriteHeader(statusCode int) {
+
+	// we need to unset cookies before writing the header
+	if statusCode == http.StatusUnauthorized {
+		r.Middleware.UnsetAuthToken(r.ResponseWriter)
+		r.Middleware.UnsetCSRFToken(r.ResponseWriter)
+	}
+
 	r.ResponseWriter.WriteHeader(statusCode)
 }
 
@@ -25,6 +35,7 @@ type WebAuthHandler struct {
 }
 
 func (handler WebAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
 	tokenString := handler.Middleware.GetAuthToken(r)
 	if tokenString != "" {
 		ctx := context.WithValue(r.Context(), CSRFRequiredKey, handler.isCSRFRequired(r))
@@ -33,13 +44,11 @@ func (handler WebAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		if r.Header.Get("Authorization") == "" {
 			r.Header.Set("Authorization", tokenString)
 		}
-	}
 
-	recorder := &responseRecorder{ResponseWriter: w}
-	handler.Handler.ServeHTTP(recorder, r)
-
-	if tokenString != "" && recorder.statusCode == http.StatusUnauthorized {
-		handler.Middleware.UnsetAuthToken(w)
+		wrapper := NewResponseWrapper(w, handler.Middleware)
+		handler.Handler.ServeHTTP(wrapper, r)
+	} else {
+		handler.Handler.ServeHTTP(w, r)
 	}
 }
 

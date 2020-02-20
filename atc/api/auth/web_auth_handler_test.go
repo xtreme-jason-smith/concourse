@@ -84,6 +84,10 @@ var _ = Describe("WebAuthHandler", func() {
 				It("does not unset the auth cookie", func() {
 					Expect(fakeMiddleware.UnsetAuthTokenCallCount()).To(Equal(0))
 				})
+
+				It("does not unset the csrf cookie", func() {
+					Expect(fakeMiddleware.UnsetCSRFTokenCallCount()).To(Equal(0))
+				})
 			})
 		})
 
@@ -130,9 +134,12 @@ var _ = Describe("WebAuthHandler", func() {
 				It("unsets the auth cookie", func() {
 					Expect(fakeMiddleware.UnsetAuthTokenCallCount()).To(Equal(1))
 				})
+
+				It("unsets the csrf cookie", func() {
+					Expect(fakeMiddleware.UnsetCSRFTokenCallCount()).To(Equal(1))
+				})
 			})
 		})
-
 	})
 
 	Describe("CSRF Required", func() {

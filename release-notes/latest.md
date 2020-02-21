@@ -38,11 +38,36 @@ deployment.
     <img width="460" height="300" src="http://localhost:8000/images/wow.gif">
   </p>
 
-  You might be wondering, what is the algorithm and why do I care about it? YOU FOOL! The algorithm is the heart and soul of Concourse! The algorithm is what determines the inputs for every newly created build in your pipeline. (If you want to read more about how the algorithm works, check out the [scheduler docs][scheduler-docs].)
+  You might be wondering, what is the algorithm and why do I care about it? YOU
+  FOOL! The algorithm is the heart and soul of Concourse! The algorithm is what
+  determines the inputs for every newly created build in your pipeline. (If you
+  want to read more about how the algorithm works, check out the [scheduler
+  docs][scheduler-docs].)
 
-  The main goal of the new algorithm is to increase scalibility and efficiency. The old algorithm used to load up all the resource versions, build inputs and build outputs into memory then use brute-force to figure out what the next inputs would be. This method worked well enough in most cases, but once you have a huge deployment with thousands or even millions of versions or build inputs/outputs it would start to put a lot of strain on the `web` and `db` niodes.
+  The main goal of the new algorithm is to increase scalibility and efficiency.
+  The old algorithm used to load up all the resource versions, build inputs and
+  build outputs into memory then use brute-force to figure out what the next
+  inputs would be. This method worked well enough in most cases, but once you
+  have a huge deployment with thousands or even millions of versions or build
+  inputs/outputs it would start to put a lot of strain on the `web` and `db`
+  niodes.
 
-  With the new algorithm, it will only query for the specific data that it needs at the time it needs it. This dramatically reduces resource utilization of both the `web` and `db` nodes.
+  The new algorithm takes a very different approach which does not require the
+  entire dataset to be held in memory, and does not require expensive calls to
+  the database. We now make use of fancy `jsonb` querying functionality in
+  Postgres: a successful build's set of resource versions are stored in a table
+  which we can quickly search to find matching candidates when evaluating
+  `passed` constraints.
+
+  Overall, this new approach dramatically reduces resource utilization of both
+  the `web` and `db` nodes.
+
+  You might be thinking, "what in the world are you talking about?"
+
+  Let's attempt some metaphors. (Or you can just skip to the next release note.)
+
+
+  In deciding the versions for an input, there are two main scenarios to consider: 
 
   You can think of the difference in the context of going to the grocery store to buy a specific brand of bacon. The old algorithm would've gone to the grocery store and bought all the different brands of bacon that it had ever purchased. It would then bring home all the bacon and then figure out which brand it actually needed. It's possible that it didn't need to use the majority of the bacon, and most of it goes to waste. Think about how much money would be spent doing this and how inefficient it is! By comparison, the new algorithm would first figure out which brand of bacon it needs then go to the grocery store and grab that brand. It might need to take multiple trips to the store if it figures out that the brand isn't the one it wants, but in the end, it'll still be more.
 
